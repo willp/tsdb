@@ -246,6 +246,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
     ret = nt_cf.get(nodetype, column_count=100, read_consistency_level=ConsistencyLevel.QUORUM)
     print 'already SET! (%r)' % ret
   except pycassa.NotFoundException:
+    print 'Inserting NEW nodetype row', nodetype, attr_dict
     nt_cf.insert(nodetype,
                  attr_dict,
                  write_consistency_level=ConsistencyLevel.QUORUM)
@@ -254,7 +255,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
     print 'Updating attr -> nodetype map: %s = %s' % (rowkey, nodetype)
     try:
       ret = mcf.get(rowkey, column_count=100, read_consistency_level=ConsistencyLevel.QUORUM)
-      print '  already SET! (%r)' % ret
+      print '  row %s already SET! (%r)' % (rowkey, ret)
     except pycassa.NotFoundException:
       print '  add %s = "{%s: %d}"' % (rowkey, nodetype, a_idx)
       mcf.insert(rowkey,

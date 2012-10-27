@@ -21,13 +21,13 @@ if __name__ == '__main__':
   protocol = pfactory.getProtocol(transport)
   client = TSPublish.Client(protocol)
   
-  ret = client.CreateNodeType('thr_stats', ['srvr', 'method', 'metric'])
+  ret = client.CreateNodeType('thr_stats4', ['srvr', 'method', 'metric'])
   print 'Ret returned:', ret
 
   ret = client.CreateMetric('Calls/Sec', 'raw')
   print 'Made metric:', ret
 
-  samp = Sample(nodetype='thr_stats',
+  samp = Sample(nodetype='thr_stats4',
                 attrs=['MyServer123', 'Operation', 'Calls/Sec#raw'],
                 timestamp=time.time(),
                 value=random.random()

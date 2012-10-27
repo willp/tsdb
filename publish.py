@@ -1,9 +1,17 @@
 #!/usr/bin/python
-import collections, copy, itertools, random, struct, sys, time
+import collections, copy, itertools, random, socket, sys, threading, time
 import pycassa, pycassa.connection, pycassa.pool
 from pycassa.cassandra.ttypes import ConsistencyLevel
 
 from casslock import CassLock
+
+sys.path.insert(0,  'gen-py')
+from tspub import TSPublish
+from tspub.ttypes import *
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+from thrift.server import TServer
 
 SERVERS = ['monterra:9160',
            'monterra:9164',
@@ -295,7 +303,6 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
   NT_ATTRS[nodetype] = attrs
   NT_IDS[nodetype] = nt_id
   return nt_id
-  
 
 
 def process_recent(pool, nodetype):
@@ -357,50 +364,69 @@ def publish(pool, mcf, cf, nodetype, attrs, ts, val):
     print 'Flushing recent attrs out to NAV table'
     LAST_FLUSH = time.time()
     process_recent(pool, nodetype)
-  
+
+
+class PubHandler(object):
+  def __init__(self):
+    self.csys = setup_cass()
+    self.pool = pool = pycassa.pool.ConnectionPool(KEYSPACE, server_list=SERVERS, timeout=5)
+    self.cf = pycassa.ColumnFamily(pool, CF)
+    self.meta_cf = pycassa.ColumnFamily(pool, CF_META)
+    self.NTs = {}
+
+  def CreateNodeType(self, nodetype, attrs):
+    """Build a nodetype with named attributes in the order given
+    and update any metadata needed otherwise"""
+    assert len(attrs) > 0
+    for item in attrs:
+      assert len(item) > 0
+      assert item == item.lower()
+      assert ' ' not in item
+    assert nodetype == nodetype.lower()
+    assert len(nodetype) > 2
+    assert ' ' not in nodetype
+    print 'Creating nodetype "%s" with attrs: %r' % (nodetype, attrs)
+    create_nodetype(self.csys, self.pool, self.meta_cf, nodetype, attrs)
+    print 'Created nodetype "%s"!' % nodetype
+    return True
+
+  def CreateMetric(self, name, mtype):
+    assert mtype == 'raw'
+    assert ' ' not in name
+    make_metric(self.meta_cf, name, mtype)
+    return True
+
+  def _get_nt_cf(self, nodetype):
+    nt_cf = self.NTs.get(nodetype, None)
+    if nt_cf is not None:
+      return nt_cf
+    self.NTs[nodetype] = nt_cf = pycassa.ColumnFamily(self.pool, 'ts_' + nodetype)
+    return(nt_cf)
+
+  def Store(self, data):
+    """
+    """
+    cf = self._get_nt_cf(data.nodetype)
+    publish(self.pool, self.meta_cf, cf, data.nodetype, data.attrs, data.timestamp, data.value)
+
+  def StoreBulk(self, data):
+    """
+    """
+    cf = self._get_nt_cf(data.nodetype)
+    with cf.batch(queue_size=5000,
+                         write_consistency_level=ConsistencyLevel.ANY
+                        ) as cfb:
+      for ts, val in data.values.iteritems():
+        publish(self.pool, self.meta_cf, cfb, nodetype, data.attrs, ts, val)
 
 if __name__ == '__main__':
-  csys = setup_cass()
-  pool = pycassa.pool.ConnectionPool(KEYSPACE, server_list=SERVERS, timeout=5)
-  cf = pycassa.ColumnFamily(pool, CF)
-  meta_cf = pycassa.ColumnFamily(pool, CF_META)
-  nodetype = 'routerintpeer2'
-  create_nodetype(csys, pool, meta_cf, nodetype, ['router', 'interface', 'peeras', 'metric'])
-  rtrint_cf = pycassa.ColumnFamily(pool, 'ts_' + nodetype)
-
-  for m_name in ('InUtil', 'OutUtil',
-                 'InBits/Sec', 'OutBits/Sec',
-                 'InErrors/Sec', 'OutErrors/Sec',
-                 'SpeedBits/Sec',
-                 'AdminStatus', 'OperStatus',
-                 'InDiscards/Sec', 'OutDiscards/Sec'):
-    make_metric(meta_cf, m_name, 'raw')
-  count = 0
-  start = time.time()
-  now = int(start)
-  now -= now % 60
-  x = 1440
-  print 'starting batcher'
-  with rtrint_cf.batch(
-                       queue_size=5000,
-                        write_consistency_level=ConsistencyLevel.ANY
-                      ) as cfb:
-    while x > 0:
-      for rtr_num in range(1, 99):
-        rtr = 'wp%03d.abc1' % rtr_num
-        for ifc in range(1, 99, 7):
-          iface = 'xe-0/%d/%d' % ( ifc / 10, ifc % 10)
-          for peer_id in range(1, 243):
-            peer_as = 'AS%d' % peer_id
-            for mtr in ('InUtil', 'OutUtil', 'InBits/Sec', 'OutBits/Sec', 'SpeedBits/Sec',
-                        'AdminStatus', 'OperStatus', 'InDiscards/Sec', 'OutDiscards/Sec'):
-              count += 1
-              atuple = (rtr, iface, peer_as, mtr)
-              publish(pool, meta_cf, cfb, nodetype, atuple, now, random.random() * 100.0)
-              if count % 8000 == 0:
-                elapsed = time.time() - start
-                print '%8.2f samples/s | count:%9d | elapsed:%6.1f s | last:(%r)' % (
-                  count / elapsed, count, elapsed, atuple)
-      now += 60
-      x -= 1
-  print 'batcher done'
+  # Start up server
+  PORT = 1974
+  pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+  tfactory = TTransport.TFramedTransportFactory()
+  handler = PubHandler()
+  processor = TSPublish.Processor(handler)
+  transport = TSocket.TServerSocket('localhost', PORT)
+  server = TServer.TThreadedServer(processor, transport, tfactory, pfactory)
+  print 'Starting up server on port %d' % PORT
+  server.serve()

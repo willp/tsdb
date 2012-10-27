@@ -23,9 +23,10 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host[:port]] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  bool CreateNodeType( attrs)'
+  print '  bool CreateNodeType(string nodetype,  attrs)'
+  print '  bool CreateMetric(string name, string mtype)'
   print '  void Store(Sample data)'
-  print '  void StoreBulk( data)'
+  print '  void StoreBulks( batch)'
   print ''
   sys.exit(0)
 
@@ -78,10 +79,16 @@ client = TSPublish.Client(protocol)
 transport.open()
 
 if cmd == 'CreateNodeType':
-  if len(args) != 1:
-    print 'CreateNodeType requires 1 args'
+  if len(args) != 2:
+    print 'CreateNodeType requires 2 args'
     sys.exit(1)
-  pp.pprint(client.CreateNodeType(eval(args[0]),))
+  pp.pprint(client.CreateNodeType(args[0],eval(args[1]),))
+
+elif cmd == 'CreateMetric':
+  if len(args) != 2:
+    print 'CreateMetric requires 2 args'
+    sys.exit(1)
+  pp.pprint(client.CreateMetric(args[0],args[1],))
 
 elif cmd == 'Store':
   if len(args) != 1:
@@ -89,11 +96,11 @@ elif cmd == 'Store':
     sys.exit(1)
   pp.pprint(client.Store(eval(args[0]),))
 
-elif cmd == 'StoreBulk':
+elif cmd == 'StoreBulks':
   if len(args) != 1:
-    print 'StoreBulk requires 1 args'
+    print 'StoreBulks requires 1 args'
     sys.exit(1)
-  pp.pprint(client.StoreBulk(eval(args[0]),))
+  pp.pprint(client.StoreBulks(eval(args[0]),))
 
 else:
   print 'Unrecognized method %s' % cmd

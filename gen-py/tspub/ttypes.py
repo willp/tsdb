@@ -25,7 +25,7 @@ class Sample(TBase):
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'nodetype', None, None, ), # 1
-    (2, TType.MAP, 'attrs', (TType.STRING,None,TType.STRING,None), None, ), # 2
+    (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
     (3, TType.STRING, 'metric', None, None, ), # 3
     (4, TType.DOUBLE, 'timestamp', None, None, ), # 4
     (5, TType.DOUBLE, 'value', None, None, ), # 5
@@ -37,6 +37,40 @@ class Sample(TBase):
     self.metric = metric
     self.timestamp = timestamp
     self.value = value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class SampleBulk(TBase):
+  """
+  Attributes:
+   - nodetype
+   - attrs
+   - metric
+   - values
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'nodetype', None, None, ), # 1
+    (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
+    (3, TType.STRING, 'metric', None, None, ), # 3
+    (4, TType.MAP, 'values', (TType.DOUBLE,None,TType.DOUBLE,None), None, ), # 4
+  )
+
+  def __init__(self, nodetype=None, attrs=None, metric=None, values=None,):
+    self.nodetype = nodetype
+    self.attrs = attrs
+    self.metric = metric
+    self.values = values
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)

@@ -13,10 +13,19 @@ from thrift.protocol.TBase import TBase, TExceptionBase
 
 
 class Iface(object):
-  def CreateNodeType(self, attrs):
+  def CreateNodeType(self, nodetype, attrs):
     """
     Parameters:
+     - nodetype
      - attrs
+    """
+    pass
+
+  def CreateMetric(self, name, mtype):
+    """
+    Parameters:
+     - name
+     - mtype
     """
     pass
 
@@ -27,10 +36,10 @@ class Iface(object):
     """
     pass
 
-  def StoreBulk(self, data):
+  def StoreBulks(self, batch):
     """
     Parameters:
-     - data
+     - batch
     """
     pass
 
@@ -42,17 +51,19 @@ class Client(Iface):
       self._oprot = oprot
     self._seqid = 0
 
-  def CreateNodeType(self, attrs):
+  def CreateNodeType(self, nodetype, attrs):
     """
     Parameters:
+     - nodetype
      - attrs
     """
-    self.send_CreateNodeType(attrs)
+    self.send_CreateNodeType(nodetype, attrs)
     return self.recv_CreateNodeType()
 
-  def send_CreateNodeType(self, attrs):
+  def send_CreateNodeType(self, nodetype, attrs):
     self._oprot.writeMessageBegin('CreateNodeType', TMessageType.CALL, self._seqid)
     args = CreateNodeType_args()
+    args.nodetype = nodetype
     args.attrs = attrs
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
@@ -71,6 +82,38 @@ class Client(Iface):
     if result.success is not None:
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateNodeType failed: unknown result");
+
+  def CreateMetric(self, name, mtype):
+    """
+    Parameters:
+     - name
+     - mtype
+    """
+    self.send_CreateMetric(name, mtype)
+    return self.recv_CreateMetric()
+
+  def send_CreateMetric(self, name, mtype):
+    self._oprot.writeMessageBegin('CreateMetric', TMessageType.CALL, self._seqid)
+    args = CreateMetric_args()
+    args.name = name
+    args.mtype = mtype
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CreateMetric(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CreateMetric_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateMetric failed: unknown result");
 
   def Store(self, data):
     """
@@ -102,30 +145,30 @@ class Client(Iface):
       raise result.exc
     return
 
-  def StoreBulk(self, data):
+  def StoreBulks(self, batch):
     """
     Parameters:
-     - data
+     - batch
     """
-    self.send_StoreBulk(data)
-    self.recv_StoreBulk()
+    self.send_StoreBulks(batch)
+    self.recv_StoreBulks()
 
-  def send_StoreBulk(self, data):
-    self._oprot.writeMessageBegin('StoreBulk', TMessageType.CALL, self._seqid)
-    args = StoreBulk_args()
-    args.data = data
+  def send_StoreBulks(self, batch):
+    self._oprot.writeMessageBegin('StoreBulks', TMessageType.CALL, self._seqid)
+    args = StoreBulks_args()
+    args.batch = batch
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_StoreBulk(self, ):
+  def recv_StoreBulks(self, ):
     (fname, mtype, rseqid) = self._iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(self._iprot)
       self._iprot.readMessageEnd()
       raise x
-    result = StoreBulk_result()
+    result = StoreBulks_result()
     result.read(self._iprot)
     self._iprot.readMessageEnd()
     if result.exc is not None:
@@ -138,8 +181,9 @@ class Processor(Iface, TProcessor):
     self._handler = handler
     self._processMap = {}
     self._processMap["CreateNodeType"] = Processor.process_CreateNodeType
+    self._processMap["CreateMetric"] = Processor.process_CreateMetric
     self._processMap["Store"] = Processor.process_Store
-    self._processMap["StoreBulk"] = Processor.process_StoreBulk
+    self._processMap["StoreBulks"] = Processor.process_StoreBulks
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -161,8 +205,19 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = CreateNodeType_result()
-    result.success = self._handler.CreateNodeType(args.attrs)
+    result.success = self._handler.CreateNodeType(args.nodetype, args.attrs)
     oprot.writeMessageBegin("CreateNodeType", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_CreateMetric(self, seqid, iprot, oprot):
+    args = CreateMetric_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CreateMetric_result()
+    result.success = self._handler.CreateMetric(args.name, args.mtype)
+    oprot.writeMessageBegin("CreateMetric", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -181,16 +236,16 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_StoreBulk(self, seqid, iprot, oprot):
-    args = StoreBulk_args()
+  def process_StoreBulks(self, seqid, iprot, oprot):
+    args = StoreBulks_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = StoreBulk_result()
+    result = StoreBulks_result()
     try:
-      self._handler.StoreBulk(args.data)
+      self._handler.StoreBulks(args.batch)
     except InvalidSample as exc:
       result.exc = exc
-    oprot.writeMessageBegin("StoreBulk", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("StoreBulks", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -201,15 +256,18 @@ class Processor(Iface, TProcessor):
 class CreateNodeType_args(TBase):
   """
   Attributes:
+   - nodetype
    - attrs
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 1
+    (1, TType.STRING, 'nodetype', None, None, ), # 1
+    (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
   )
 
-  def __init__(self, attrs=None,):
+  def __init__(self, nodetype=None, attrs=None,):
+    self.nodetype = nodetype
     self.attrs = attrs
 
   def __repr__(self):
@@ -224,6 +282,58 @@ class CreateNodeType_args(TBase):
     return not (self == other)
 
 class CreateNodeType_result(TBase):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetric_args(TBase):
+  """
+  Attributes:
+   - name
+   - mtype
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRING, 'mtype', None, None, ), # 2
+  )
+
+  def __init__(self, name=None, mtype=None,):
+    self.name = name
+    self.mtype = mtype
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetric_result(TBase):
   """
   Attributes:
    - success
@@ -297,19 +407,19 @@ class Store_result(TBase):
   def __ne__(self, other):
     return not (self == other)
 
-class StoreBulk_args(TBase):
+class StoreBulks_args(TBase):
   """
   Attributes:
-   - data
+   - batch
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.LIST, 'data', (TType.STRUCT,(Sample, Sample.thrift_spec)), None, ), # 1
+    (1, TType.LIST, 'batch', (TType.STRUCT,(SampleBulk, SampleBulk.thrift_spec)), None, ), # 1
   )
 
-  def __init__(self, data=None,):
-    self.data = data
+  def __init__(self, batch=None,):
+    self.batch = batch
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -322,7 +432,7 @@ class StoreBulk_args(TBase):
   def __ne__(self, other):
     return not (self == other)
 
-class StoreBulk_result(TBase):
+class StoreBulks_result(TBase):
   """
   Attributes:
    - exc

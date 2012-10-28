@@ -6,7 +6,7 @@ from pycassa.cassandra.ttypes import ConsistencyLevel
 
 class CassLock(object):
   BASE_DELAY = 1.5
-  MAX_LOCKTIME = 600
+  MAX_LOCKTIME = 60
   SHORT_SLEEP = 0.1
 
   SERVERS = None
@@ -95,7 +95,7 @@ class CassLock(object):
                   columns=[self.uid],
                   write_consistency_level=ConsistencyLevel.QUORUM)
         delay_s = delay_power * ((position + self.collisions) ** 0.5) + (random.random() * self.collisions)
-        print 'Sleeping %.1f sec for coll #%d at position %d' % (delay_s, self.collisions, position)
+        print 'Sleeping %.1f sec for collision #%d at position %d' % (delay_s, self.collisions, position)
         time.sleep(delay_s)
     return self
 
@@ -124,12 +124,7 @@ if __name__ == '__main__':
   import pycassa, pycassa.pool
   from pycassa.cassandra.ttypes import ConsistencyLevel
 
-  SERVERS = ['monterra:9160',
-             'monterra:9164',
-             'monterra:9165',
-             'monterra:9170',
-             'monterra:9180',
-             ]
+  SERVERS = ['vm%3d' % i for i in range(101, 106)]
   random.shuffle(SERVERS)
   time.sleep(random.random() * 3)
   CassLock.setup(SERVERS)

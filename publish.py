@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import collections, copy, itertools, random, socket, sys, threading, time
+import collections, copy, itertools, logging, random, socket, sys, threading, time
 import pycassa, pycassa.connection, pycassa.pool
 from pycassa.cassandra.ttypes import ConsistencyLevel
 
@@ -14,12 +14,13 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-SERVERS = ['monterra:9160',
-           'monterra:9164',
-           'monterra:9165',
-           'monterra:9170',
-           'monterra:9180',
-           ]
+SERVERS = ['vm%3d' % num for num in range(101, 106)]
+#'monterra:9160',
+#           'monterra:9164',
+#           'monterra:9165',
+#           'monterra:9170',
+#           'monterra:9180',
+#           ]
 random.shuffle(SERVERS)
 CassLock.setup(SERVERS)
 
@@ -33,7 +34,6 @@ CassLock.setup(SERVERS)
 # 8. implement bulk export
 
 KEYSPACE = 'tsdata2'
-CF = 'netinf_2'
 CF_META = 'meta_2'
 CF_NT = 'nodetype_defs_2'
 
@@ -75,13 +75,6 @@ def setup_tsdata(csys):
     print 'Got result:', ret
   cfs = csys.get_keyspace_column_families(KEYSPACE, use_dict_for_col_metadata=True)
   print 'Column families in keyspace %s:  %s' % (KEYSPACE, cfs)
-  if CF not in cfs:
-    csys.create_column_family(KEYSPACE, CF,
-                              comparator_type='IntegerType',
-                              default_validation_class='FloatType',
-                              key_validation_class='AsciiType',
-                              **cf_opts
-                              )
   if CF_META not in cfs:
     # used for attribute auto-increment
     csys.create_column_family(KEYSPACE, CF_META,
@@ -141,6 +134,7 @@ def incr_attr(cf, attrname, attrval, overfetch=0):
       else:
         print 'Got %d attrs' % len(all_attrs)
         # compute max metric
+        # TODO: make this more efficient, see line above
         max_attr_id = max(all_attrs.itervalues())
         print 'Max attr ID is:', max_attr_id
         attr_id = max_attr_id + 1
@@ -148,23 +142,17 @@ def incr_attr(cf, attrname, attrval, overfetch=0):
                 {attrval: attr_id},
                 write_consistency_level=ConsistencyLevel.QUORUM)
       created = True
-      #TODO: add a reverse mapping from ID to metric name
+      # TODO: add a reverse mapping from ID to metric name
+      # (consider using a native secondary index)
       print 'Inserted attr ID:', attr_id, 'for attr:', attrval
   print 'Got attr id:', attr_id
   if overfetch:
     return attr_id, created, {}
   return attr_id, created
 
-def make_metric(mcf, *mtuple):
-  assert len(mtuple) == 2
-  assert isinstance(mtuple[0], str)
-  assert isinstance(mtuple[1], str)
-  mkey = '#'.join(str(m) for m in mtuple)
-  metric_id, new = incr_attr(mcf, 'metrics', mkey)
-  return metric_id
-
 NT_ATTRS = {}  # {"nodetypestr": ("attr0", "attr1", "attr2", ...)}
-NT_IDS = {}  # {'nodetypestr": <int:nodetype_id>, ...}
+NT_IDS = {}  # {"nodetypestr": <int:nodetype_id>, ...}
+NT_IDS_REV = {} # { <int:nodetype_id>: "nodetypestr", ...}
 
 def create_nodetype(csys, pool, mcf, nodetype, attrs):
   print 'Building nodetype %s with attrs: %r' % (nodetype, attrs)
@@ -190,7 +178,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
     print 'Made new nodetype ID: %d for nodetype "%s"' % (nt_id, nodetype)
   else:
     print 'already SET! (%d)' % nt_id
-    # TODO: validate nodetype really exists?
+    # TODO: validate nodetype really exists
     #return nt_id
   nt_cf = pycassa.ColumnFamily(pool, CF_NT)
   print 'Adding attributes %r to "%s" col-family' % (attrs, CF_NT)
@@ -217,7 +205,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
   CF_NAV = 'nav_' + nodetype
   CF_TS = 'ts_' + nodetype
   cfs = csys.get_keyspace_column_families(KEYSPACE, use_dict_for_col_metadata=True)
-
+  #
   cf_opts = dict(
                  read_repair_chance=0.0001,
                  min_compaction_threshold=8,
@@ -232,7 +220,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
                    compaction_strategy='SizeTieredCompactionStrategy',
                    compression_options=dict(sstable_compression='')
                   )
-
+  #
   if CF_TS not in cfs:
     print 'Creating TS col-family "%s"' % CF_TS
     csys.create_column_family(KEYSPACE, CF_TS,
@@ -256,6 +244,7 @@ def create_nodetype(csys, pool, mcf, nodetype, attrs):
   print 'DONE!'
   NT_ATTRS[nodetype] = attrs
   NT_IDS[nodetype] = nt_id
+  NT_IDS_REV[nt_id] = nodetype
   return nt_id
 
 
@@ -283,50 +272,69 @@ def process_recent(pool, nodetype):
   print 'DONE INSERTING %6d NAV ROWS IN %5.1f SECONDS: %6.1f ROWS/SEC!' % (count, elapsed, rate)
   NAV_MAP[nodetype] = NodeTreeCount(nodetype)
 
-def publish(pool, mcf, cf, nodetype, attrs, ts, val):
-  ts = int(ts)
-  attr_names = NT_ATTRS[nodetype]
-  a_ids = []
-  for a_name, attr in itertools.izip(attr_names, attrs):
-    attr_id = ATTR_MAP[a_name].get(attr, False)
-    if not attr_id:
-      (attr_id, new, overfetch) = incr_attr(mcf, 'attr_' + a_name, attr, 100)
-      if overfetch:
-        print 'Pre-Populating "%s" attr cache with %d extra attrs: %r' % (a_name, len(overfetch), overfetch)
-        for o_attr, o_id in overfetch.iteritems():
-          ATTR_MAP[a_name][o_attr] = o_id
-      else:
-        # no extra data in overfetch
-        ATTR_MAP[a_name][attr] = attr_id
-      if new:
-        print 'Made new attr id "%s": %s => %d' % (a_name, attr, attr_id)
-    a_ids.append(attr_id)
-  key = ','.join(str(attr) for attr in a_ids)
-  cf.insert(key,
-            {ts: val},
-            ttl=86400 * 365 * 4,
-           )
-  # update local NAV tree
-  global LAST_FLUSH
-  nt_navmap = NAV_MAP.get(nodetype)
-  if nt_navmap is None:
-    nt_navmap = NAV_MAP[nodetype] = NodeTreeCount(nodetype)
-  nt_navmap.add(a_ids)
-  if time.time() - LAST_FLUSH > 90:
-    # TODO: change flushing strategy to be global-timer and per-nodetype flush
-    # because this will miss flushes of infrequently seen nodetypes
-    print 'Flushing recent attrs out to NAV table'
-    LAST_FLUSH = time.time()
-    process_recent(pool, nodetype)
-
 
 class PubHandler(object):
   def __init__(self):
     self.csys = setup_cass()
-    self.pool = pool = pycassa.pool.ConnectionPool(KEYSPACE, server_list=SERVERS, timeout=5)
-    self.cf = pycassa.ColumnFamily(pool, CF)
-    self.meta_cf = pycassa.ColumnFamily(pool, CF_META)
+    self.pool = pycassa.pool.ConnectionPool(KEYSPACE, server_list=SERVERS, timeout=15)
+    self.meta_cf = pycassa.ColumnFamily(self.pool, CF_META)
     self.NTs = {}
+    self._last_flush = time.time()
+    self._load_nodetypes()
+
+  def _load_nodetypes(self):
+    nt_cf = pycassa.ColumnFamily(self.pool, CF_NT)
+    nt_list = self.meta_cf.get('nodetype', column_count=1000, read_consistency_level=ConsistencyLevel.QUORUM)
+    for nodetype, nodetype_id in nt_list.iteritems():
+      NT_IDS[nodetype] = nodetype_id
+      NT_IDS_REV[nodetype_id] = nodetype
+    print 'NT IDs:', NT_IDS
+    print 'NT LIST:', nt_list
+    ret = nt_cf.get_range(column_count=100, read_consistency_level=ConsistencyLevel.QUORUM)
+    for nodetype, attrdict in ret:
+      if attrdict.keys() == range(len(attrdict)):
+        NT_ATTRS[nodetype] = attrdict.values()
+      else:
+        pass  # TODO: ignore partial nodetype, log warning, schedulre refresh for later
+    print 'NT ATTRS:', NT_ATTRS
+
+  def _publish(self, cf, nodetype, attrs, ts, val, ttl=None):
+    pool = self.pool
+    mcf = self.meta_cf
+    ts = int(ts)
+    attr_names = NT_ATTRS[nodetype]
+    a_ids = []
+    for a_name, attr in itertools.izip(attr_names, attrs):
+      attr_id = ATTR_MAP[a_name].get(attr, False)
+      if not attr_id:
+        (attr_id, new, overfetch) = incr_attr(mcf, 'attr_' + a_name, attr, 100)
+        if overfetch:
+          print 'Pre-Populating "%s" attr cache with %d extra attrs: %r' % (a_name, len(overfetch), overfetch)
+          for o_attr, o_id in overfetch.iteritems():
+            ATTR_MAP[a_name][o_attr] = o_id
+        else:
+          # no extra data in overfetch
+          ATTR_MAP[a_name][attr] = attr_id
+        if new:
+          print 'Made new attr id "%s": %s => %d' % (a_name, attr, attr_id)
+      a_ids.append(attr_id)
+    key = ','.join(str(attr) for attr in a_ids)
+    cf.insert(key,
+              {ts: val},
+              ttl=ttl,  #86400 * 365 * 4,
+             )
+    # update local NAV tree
+    nt_navmap = NAV_MAP.get(nodetype)
+    if nt_navmap is None:
+      nt_navmap = NAV_MAP[nodetype] = NodeTreeCount(nodetype)
+    nt_navmap.add(a_ids)
+    if time.time() - self._last_flush > 90:
+      # TODO: change flushing strategy to be global-timer and per-nodetype flush
+      # because this will miss flushes of infrequently seen nodetypes
+      print 'Flushing recent attrs out to NAV table'
+      self._last_flush = time.time()
+      process_recent(pool, nodetype)
+
 
   def CreateNodeType(self, nodetype, attrs):
     """Build a nodetype with named attributes in the order given
@@ -344,11 +352,13 @@ class PubHandler(object):
     print 'Created nodetype "%s"!' % nodetype
     return True
 
-  def CreateMetric(self, name, mtype):
-    assert mtype == 'raw'
+  def CreateMetric(self, name, mtype, mclass):
+    # TODO: store mclass and extra per-metric metadata
     assert ' ' not in name
-    make_metric(self.meta_cf, name, mtype)
-    return True
+    assert mtype == 'raw'
+    mkey = '%s#%s' % (name, mtype)
+    metric_id, new = incr_attr(self.meta_cf, 'metrics', mkey)
+    return metric_id
 
   def _get_nt_cf(self, nodetype):
     nt_cf = self.NTs.get(nodetype, None)
@@ -357,21 +367,29 @@ class PubHandler(object):
     self.NTs[nodetype] = nt_cf = pycassa.ColumnFamily(self.pool, 'ts_' + nodetype)
     return(nt_cf)
 
-  def Store(self, data):
-    """
-    """
-    cf = self._get_nt_cf(data.nodetype)
-    publish(self.pool, self.meta_cf, cf, data.nodetype, data.attrs, data.timestamp, data.value)
+  def GetNodeTypes(self):
+    nts = {}
+    for nodetype, attrs in NT_ATTRS.iteritems():
+      nt_id = NT_IDS[nodetype]
+      nts[nt_id] = NodeType(name=nodetype, attrs=attrs)
+    return nts
 
-  def StoreBulk(self, data):
+  def Store(self, nodetype, attrs, timestamp, value):
     """
     """
-    cf = self._get_nt_cf(data.nodetype)
+    cf = self._get_nt_cf(nodetype)
+    self._publish(cf, nodetype, attrs, timestamp, value)
+
+  def StoreBulk(self, nodetype, attrs, values):
+    """
+    """
+    cf = self._get_nt_cf(nodetype)
     with cf.batch(queue_size=5000,
-                         write_consistency_level=ConsistencyLevel.ANY
-                        ) as cfb:
-      for ts, val in data.values.iteritems():
-        publish(self.pool, self.meta_cf, cfb, nodetype, data.attrs, ts, val)
+                  write_consistency_level=ConsistencyLevel.ANY
+                 ) as cfb:
+      for ts, val in values.iteritems():
+        self._publish(cfb, nodetype, attrs, ts, val)
+    print 'batch completed'
 
 if __name__ == '__main__':
   # Start up server

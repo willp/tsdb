@@ -46,6 +46,17 @@ class Iface(object):
     """
     pass
 
+  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+    """
+    Parameters:
+     - nodetype
+     - attrs
+     - timestamp
+     - duration_sec
+     - value
+    """
+    pass
+
   def StoreBulk(self, nodetype, attrs, values):
     """
     Parameters:
@@ -215,6 +226,44 @@ class Client(Iface):
       raise result.exc
     return
 
+  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+    """
+    Parameters:
+     - nodetype
+     - attrs
+     - timestamp
+     - duration_sec
+     - value
+    """
+    self.send_StoreRate(nodetype, attrs, timestamp, duration_sec, value)
+    self.recv_StoreRate()
+
+  def send_StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+    self._oprot.writeMessageBegin('StoreRate', TMessageType.CALL, self._seqid)
+    args = StoreRate_args()
+    args.nodetype = nodetype
+    args.attrs = attrs
+    args.timestamp = timestamp
+    args.duration_sec = duration_sec
+    args.value = value
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_StoreRate(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = StoreRate_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.exc is not None:
+      raise result.exc
+    return
+
   def StoreBulk(self, nodetype, attrs, values):
     """
     Parameters:
@@ -259,6 +308,7 @@ class Processor(Iface, TProcessor):
     self._processMap["GetNodeTypes"] = Processor.process_GetNodeTypes
     self._processMap["GetMetrics"] = Processor.process_GetMetrics
     self._processMap["Store"] = Processor.process_Store
+    self._processMap["StoreRate"] = Processor.process_StoreRate
     self._processMap["StoreBulk"] = Processor.process_StoreBulk
 
   def process(self, iprot, oprot):
@@ -330,6 +380,20 @@ class Processor(Iface, TProcessor):
     except InvalidSample as exc:
       result.exc = exc
     oprot.writeMessageBegin("Store", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_StoreRate(self, seqid, iprot, oprot):
+    args = StoreRate_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = StoreRate_result()
+    try:
+      self._handler.StoreRate(args.nodetype, args.attrs, args.timestamp, args.duration_sec, args.value)
+    except InvalidSample as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("StoreRate", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -521,7 +585,7 @@ class GetMetrics_result(TBase):
   """
 
   thrift_spec = (
-    (0, TType.LIST, 'success', (TType.STRUCT,(Metric, Metric.thrift_spec)), None, ), # 0
+    (0, TType.MAP, 'success', (TType.I32,None,TType.STRUCT,(Metric, Metric.thrift_spec)), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -573,6 +637,68 @@ class Store_args(TBase):
     return not (self == other)
 
 class Store_result(TBase):
+  """
+  Attributes:
+   - exc
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'exc', (InvalidSample, InvalidSample.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, exc=None,):
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class StoreRate_args(TBase):
+  """
+  Attributes:
+   - nodetype
+   - attrs
+   - timestamp
+   - duration_sec
+   - value
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'nodetype', None, None, ), # 1
+    (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
+    (3, TType.DOUBLE, 'timestamp', None, None, ), # 3
+    (4, TType.DOUBLE, 'duration_sec', None, None, ), # 4
+    (5, TType.DOUBLE, 'value', None, None, ), # 5
+  )
+
+  def __init__(self, nodetype=None, attrs=None, timestamp=None, duration_sec=None, value=None,):
+    self.nodetype = nodetype
+    self.attrs = attrs
+    self.timestamp = timestamp
+    self.duration_sec = duration_sec
+    self.value = value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class StoreRate_result(TBase):
   """
   Attributes:
    - exc

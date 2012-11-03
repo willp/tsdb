@@ -37,6 +37,20 @@ class MClass(TBase):
     "PERCENT": 6,
   }
 
+class MDirection(TBase):
+  IN = 1
+  OUT = 2
+
+  _VALUES_TO_NAMES = {
+    1: "IN",
+    2: "OUT",
+  }
+
+  _NAMES_TO_VALUES = {
+    "IN": 1,
+    "OUT": 2,
+  }
+
 
 class InvalidSample(TExceptionBase):
   """
@@ -109,9 +123,11 @@ class Metric(TBase):
    - units
    - description
    - display_name
+   - direction
    - enum_map
    - min_value
    - max_value
+   - doc_url
   """
 
   thrift_spec = (
@@ -126,21 +142,25 @@ class Metric(TBase):
     None, # 8
     None, # 9
     (10, TType.STRING, 'display_name', None, None, ), # 10
-    (11, TType.MAP, 'enum_map', (TType.I32,None,TType.STRING,None), None, ), # 11
-    (12, TType.DOUBLE, 'min_value', None, None, ), # 12
-    (13, TType.DOUBLE, 'max_value', None, None, ), # 13
+    (11, TType.I32, 'direction', None, None, ), # 11
+    (12, TType.MAP, 'enum_map', (TType.I32,None,TType.STRING,None), None, ), # 12
+    (13, TType.DOUBLE, 'min_value', None, None, ), # 13
+    (14, TType.DOUBLE, 'max_value', None, None, ), # 14
+    (15, TType.STRING, 'doc_url', None, None, ), # 15
   )
 
-  def __init__(self, name=None, mtype=None, mclass=None, units=None, description=None, display_name=None, enum_map=None, min_value=None, max_value=None,):
+  def __init__(self, name=None, mtype=None, mclass=None, units=None, description=None, display_name=None, direction=None, enum_map=None, min_value=None, max_value=None, doc_url=None,):
     self.name = name
     self.mtype = mtype
     self.mclass = mclass
     self.units = units
     self.description = description
     self.display_name = display_name
+    self.direction = direction
     self.enum_map = enum_map
     self.min_value = min_value
     self.max_value = max_value
+    self.doc_url = doc_url
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)

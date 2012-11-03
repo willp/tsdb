@@ -14,13 +14,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-SERVERS = ['vm%3d' % num for num in range(101, 106)]
-#'monterra:9160',
-#           'monterra:9164',
-#           'monterra:9165',
-#           'monterra:9170',
-#           'monterra:9180',
-#           ]
+SERVERS = ['vm%3d' % num for num in range(101, 106)]  # TODO: load from config file
 random.shuffle(SERVERS)
 CassLock.setup(SERVERS)
 
@@ -390,6 +384,11 @@ class PubHandler(object):
       for ts, val in values.iteritems():
         self._publish(cfb, nodetype, attrs, ts, val)
     print 'batch completed'
+
+  def StoreRate(self, *args):
+    raise NotImplementedError('Method not yet implemented')
+
+
 
 if __name__ == '__main__':
   # Start up server

@@ -11,6 +11,112 @@ from thrift.Thrift import TType, TMessageType, TException, TApplicationException
 from thrift.protocol.TBase import TBase, TExceptionBase
 
 
+class CannedValids(TBase):
+  IP = 1
+  IPV4 = 2
+  IPV6 = 3
+  MAC_ADDRESS = 4
+  MAC_ADDRESS_STRICT = 5
+  FQDN = 6
+  FQDNR = 7
+  FQDN_COLON_PORT = 8
+  FQDNR_COLON_PORT = 9
+  IP_COLON_PORT = 10
+  IPV4_COLON_PORT = 11
+  IPV6_COLON_PORT = 12
+  ABSOLUTE_PATH = 13
+  RELATIVE_PATH = 14
+  WINDOWS_PATH = 15
+  DOTTED_STRING = 16
+  EMAIL_ADDRESS = 17
+  URL = 18
+  IP_CIDR_SLASH = 19
+  CLLI_CODE = 20
+  LAST_COMMA_FIRST_NAMES = 21
+
+  _VALUES_TO_NAMES = {
+    1: "IP",
+    2: "IPV4",
+    3: "IPV6",
+    4: "MAC_ADDRESS",
+    5: "MAC_ADDRESS_STRICT",
+    6: "FQDN",
+    7: "FQDNR",
+    8: "FQDN_COLON_PORT",
+    9: "FQDNR_COLON_PORT",
+    10: "IP_COLON_PORT",
+    11: "IPV4_COLON_PORT",
+    12: "IPV6_COLON_PORT",
+    13: "ABSOLUTE_PATH",
+    14: "RELATIVE_PATH",
+    15: "WINDOWS_PATH",
+    16: "DOTTED_STRING",
+    17: "EMAIL_ADDRESS",
+    18: "URL",
+    19: "IP_CIDR_SLASH",
+    20: "CLLI_CODE",
+    21: "LAST_COMMA_FIRST_NAMES",
+  }
+
+  _NAMES_TO_VALUES = {
+    "IP": 1,
+    "IPV4": 2,
+    "IPV6": 3,
+    "MAC_ADDRESS": 4,
+    "MAC_ADDRESS_STRICT": 5,
+    "FQDN": 6,
+    "FQDNR": 7,
+    "FQDN_COLON_PORT": 8,
+    "FQDNR_COLON_PORT": 9,
+    "IP_COLON_PORT": 10,
+    "IPV4_COLON_PORT": 11,
+    "IPV6_COLON_PORT": 12,
+    "ABSOLUTE_PATH": 13,
+    "RELATIVE_PATH": 14,
+    "WINDOWS_PATH": 15,
+    "DOTTED_STRING": 16,
+    "EMAIL_ADDRESS": 17,
+    "URL": 18,
+    "IP_CIDR_SLASH": 19,
+    "CLLI_CODE": 20,
+    "LAST_COMMA_FIRST_NAMES": 21,
+  }
+
+class CannedNorms(TBase):
+  RESOLVE_IP_TO_FQDN = 1
+  RESOLVE_FQDN_TO_IP = 2
+  MAC_ADDRESS_UPPER_COLONS = 3
+  MAC_ADDRESS_LOWER_COLONS = 4
+  MAC_ADDRESS_UPPER_HYPHENS = 5
+  MAC_ADDRESS_LOWER_HYPHENS = 6
+  US_PHONE = 7
+  US_PHONE_HYPHENS = 8
+  US_INTL_PHONE = 9
+
+  _VALUES_TO_NAMES = {
+    1: "RESOLVE_IP_TO_FQDN",
+    2: "RESOLVE_FQDN_TO_IP",
+    3: "MAC_ADDRESS_UPPER_COLONS",
+    4: "MAC_ADDRESS_LOWER_COLONS",
+    5: "MAC_ADDRESS_UPPER_HYPHENS",
+    6: "MAC_ADDRESS_LOWER_HYPHENS",
+    7: "US_PHONE",
+    8: "US_PHONE_HYPHENS",
+    9: "US_INTL_PHONE",
+  }
+
+  _NAMES_TO_VALUES = {
+    "RESOLVE_IP_TO_FQDN": 1,
+    "RESOLVE_FQDN_TO_IP": 2,
+    "MAC_ADDRESS_UPPER_COLONS": 3,
+    "MAC_ADDRESS_LOWER_COLONS": 4,
+    "MAC_ADDRESS_UPPER_HYPHENS": 5,
+    "MAC_ADDRESS_LOWER_HYPHENS": 6,
+    "US_PHONE": 7,
+    "US_PHONE_HYPHENS": 8,
+    "US_INTL_PHONE": 9,
+  }
+
 class MClass(TBase):
   GAUGE = 1
   RATE = 2
@@ -83,12 +189,238 @@ class InvalidSample(TExceptionBase):
   def __ne__(self, other):
     return not (self == other)
 
+class InvalidMetric(TExceptionBase):
+  """
+  Attributes:
+   - what
+   - why
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'what', None, None, ), # 1
+    (2, TType.STRING, 'why', None, None, ), # 2
+  )
+
+  def __init__(self, what=None, why=None,):
+    self.what = what
+    self.why = why
+
+  def __str__(self):
+    return repr(self)
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class AlreadyExists(TExceptionBase):
+  """
+  Attributes:
+   - what
+   - why
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'what', None, None, ), # 1
+    (2, TType.STRING, 'why', None, None, ), # 2
+  )
+
+  def __init__(self, what=None, why=None,):
+    self.what = what
+    self.why = why
+
+  def __str__(self):
+    return repr(self)
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class DoesNotExist(TExceptionBase):
+  """
+  Attributes:
+   - what
+   - why
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'what', None, None, ), # 1
+    (2, TType.STRING, 'why', None, None, ), # 2
+  )
+
+  def __init__(self, what=None, why=None,):
+    self.what = what
+    self.why = why
+
+  def __str__(self):
+    return repr(self)
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class Validator(TBase):
+  """
+  Attributes:
+   - canned
+   - canned_first
+   - match_regex
+   - min_len
+   - max_len
+   - invalid_chars
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'canned', None, None, ), # 1
+    (2, TType.BOOL, 'canned_first', None, False, ), # 2
+    (3, TType.LIST, 'match_regex', (TType.STRING,None), None, ), # 3
+    (4, TType.I32, 'min_len', None, 1, ), # 4
+    (5, TType.I32, 'max_len', None, None, ), # 5
+    (6, TType.STRING, 'invalid_chars', None, None, ), # 6
+  )
+
+  def __init__(self, canned=None, canned_first=thrift_spec[2][4], match_regex=None, min_len=thrift_spec[4][4], max_len=None, invalid_chars=None,):
+    self.canned = canned
+    self.canned_first = canned_first
+    self.match_regex = match_regex
+    self.min_len = min_len
+    self.max_len = max_len
+    self.invalid_chars = invalid_chars
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class Normalizer(TBase):
+  """
+  Attributes:
+   - canned
+   - canned_first
+   - uri_decode
+   - strip_whitespace_lr
+   - strip_whitespace
+   - strip_nonalphanumeric
+   - to_camelcase
+   - whitespace_to_underscore
+   - to_lowercase
+   - to_uppercase
+   - regex_match
+   - match_group_name
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'canned', None, None, ), # 1
+    (2, TType.BOOL, 'canned_first', None, False, ), # 2
+    (3, TType.BOOL, 'uri_decode', None, False, ), # 3
+    (4, TType.BOOL, 'strip_whitespace_lr', None, True, ), # 4
+    (5, TType.BOOL, 'strip_whitespace', None, False, ), # 5
+    (6, TType.BOOL, 'strip_nonalphanumeric', None, False, ), # 6
+    (7, TType.BOOL, 'to_camelcase', None, None, ), # 7
+    (8, TType.BOOL, 'whitespace_to_underscore', None, None, ), # 8
+    (9, TType.BOOL, 'to_lowercase', None, None, ), # 9
+    (10, TType.BOOL, 'to_uppercase', None, None, ), # 10
+    (11, TType.LIST, 'regex_match', (TType.STRING,None), None, ), # 11
+    (12, TType.STRING, 'match_group_name', None, None, ), # 12
+  )
+
+  def __init__(self, canned=None, canned_first=thrift_spec[2][4], uri_decode=thrift_spec[3][4], strip_whitespace_lr=thrift_spec[4][4], strip_whitespace=thrift_spec[5][4], strip_nonalphanumeric=thrift_spec[6][4], to_camelcase=None, whitespace_to_underscore=None, to_lowercase=None, to_uppercase=None, regex_match=None, match_group_name=None,):
+    self.canned = canned
+    self.canned_first = canned_first
+    self.uri_decode = uri_decode
+    self.strip_whitespace_lr = strip_whitespace_lr
+    self.strip_whitespace = strip_whitespace
+    self.strip_nonalphanumeric = strip_nonalphanumeric
+    self.to_camelcase = to_camelcase
+    self.whitespace_to_underscore = whitespace_to_underscore
+    self.to_lowercase = to_lowercase
+    self.to_uppercase = to_uppercase
+    self.regex_match = regex_match
+    self.match_group_name = match_group_name
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class Attr(TBase):
+  """
+  Attributes:
+   - name
+   - description
+   - validator
+   - normalizer
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRING, 'description', None, None, ), # 2
+    (3, TType.STRUCT, 'validator', (Validator, Validator.thrift_spec), None, ), # 3
+    (4, TType.STRUCT, 'normalizer', (Normalizer, Normalizer.thrift_spec), None, ), # 4
+  )
+
+  def __init__(self, name=None, description=None, validator=None, normalizer=None,):
+    self.name = name
+    self.description = description
+    self.validator = validator
+    self.normalizer = normalizer
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class NodeType(TBase):
   """
   Attributes:
    - id
    - name
    - attrs
+   - creator
   """
 
   thrift_spec = (
@@ -96,12 +428,48 @@ class NodeType(TBase):
     (1, TType.I32, 'id', None, None, ), # 1
     (2, TType.STRING, 'name', None, None, ), # 2
     (3, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 3
+    (4, TType.STRING, 'creator', None, None, ), # 4
   )
 
-  def __init__(self, id=None, name=None, attrs=None,):
+  def __init__(self, id=None, name=None, attrs=None, creator=None,):
     self.id = id
     self.name = name
     self.attrs = attrs
+    self.creator = creator
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class MOptions(TBase):
+  """
+  Attributes:
+   - direction
+   - min_value
+   - max_value
+   - doc_url
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'direction', None, None, ), # 1
+    (2, TType.DOUBLE, 'min_value', None, None, ), # 2
+    (3, TType.DOUBLE, 'max_value', None, None, ), # 3
+    (4, TType.STRING, 'doc_url', None, None, ), # 4
+  )
+
+  def __init__(self, direction=None, min_value=None, max_value=None, doc_url=None,):
+    self.direction = direction
+    self.min_value = min_value
+    self.max_value = max_value
+    self.doc_url = doc_url
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -118,49 +486,49 @@ class Metric(TBase):
   """
   Attributes:
    - name
-   - mtype
    - mclass
    - units
    - description
+   - creator
    - display_name
+   - doc_url
    - direction
-   - enum_map
    - min_value
    - max_value
-   - doc_url
+   - enum_map
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'name', None, None, ), # 1
-    (2, TType.STRING, 'mtype', None, None, ), # 2
-    (3, TType.I32, 'mclass', None, None, ), # 3
-    (4, TType.STRING, 'units', None, None, ), # 4
-    (5, TType.STRING, 'description', None, None, ), # 5
+    (2, TType.I32, 'mclass', None, None, ), # 2
+    (3, TType.STRING, 'units', None, None, ), # 3
+    (4, TType.STRING, 'description', None, None, ), # 4
+    (5, TType.STRING, 'creator', None, None, ), # 5
     None, # 6
     None, # 7
     None, # 8
     None, # 9
     (10, TType.STRING, 'display_name', None, None, ), # 10
-    (11, TType.I32, 'direction', None, None, ), # 11
-    (12, TType.MAP, 'enum_map', (TType.I32,None,TType.STRING,None), None, ), # 12
+    (11, TType.STRING, 'doc_url', None, None, ), # 11
+    (12, TType.I32, 'direction', None, None, ), # 12
     (13, TType.DOUBLE, 'min_value', None, None, ), # 13
     (14, TType.DOUBLE, 'max_value', None, None, ), # 14
-    (15, TType.STRING, 'doc_url', None, None, ), # 15
+    (15, TType.MAP, 'enum_map', (TType.I32,None,TType.STRING,None), None, ), # 15
   )
 
-  def __init__(self, name=None, mtype=None, mclass=None, units=None, description=None, display_name=None, direction=None, enum_map=None, min_value=None, max_value=None, doc_url=None,):
+  def __init__(self, name=None, mclass=None, units=None, description=None, creator=None, display_name=None, doc_url=None, direction=None, min_value=None, max_value=None, enum_map=None,):
     self.name = name
-    self.mtype = mtype
     self.mclass = mclass
     self.units = units
     self.description = description
+    self.creator = creator
     self.display_name = display_name
+    self.doc_url = doc_url
     self.direction = direction
-    self.enum_map = enum_map
     self.min_value = min_value
     self.max_value = max_value
-    self.doc_url = doc_url
+    self.enum_map = enum_map
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)

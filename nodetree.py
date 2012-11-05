@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 class Node(object):
+  """A Node Tree (Trie)
+  """
   __slots__ = ('children', 'leaves')
 
   def __init__(self):
@@ -22,19 +24,15 @@ class Node(object):
   def walk(self, parent_str='N'):
     if not self.children:
       if self.leaves:
-        # TODO: set nav entries here!
-        # in the form:  "N0:parent" => [ self.children.keys() ] = time.time()
-        #print '%s  Leaves: %r' % (parent, self.leaves)
         ###print '%s  Leaf-Cols: %r' % (parent_str, sorted(self.leaves))
         yield (parent_str, self.leaves)
       return
-    # TODO: set nav entries here!
-    # in the form:  "N0:parent" => [ self.children.keys() ] = time.time()
     ###print '%s  Cols: %r' % (parent_str, sorted(self.children.keys()))
     yield (parent_str, self.children.keys())
     for child, node in self.children.iteritems():
       for row in node.walk(parent_str + '-%s' % child):
         yield row
+
 
 class NodeTreeCount(object):
   """One per nodetype which accumulates paths

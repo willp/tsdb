@@ -20,27 +20,41 @@ if __name__ == '__main__':
   protocol = pfactory.getProtocol(transport)
   client = TSPublish.Client(protocol)
 
-  lst = client.GetNodeTypes()
-  print 'Nodetypes:'
-  for nt in lst:
-    print '  ', nt
+  lst = client.GetNodeTypeNames()
+  print 'Nodetypes:', lst
+  for nt, nt_attrs in (('test0', ('a0', 'metric')),
+                       ('test1', ('a0', 'a1', 'metric')),
+                       ('test2', ('a0', 'a1', 'a2', 'metric'))
+                       ):
+    if nt not in lst:
+      print 'Building "%s" nodetype' % nt
+      ret = client.CreateNodeType(nt, nt_attrs)
+      print 'Ret returned:', ret
+      time.sleep(5)
 
-  ret = client.CreateNodeType('test0', ['a0', 'metric'])
-  print 'Ret returned:', ret
-  time.sleep(5)
-
-  ret = client.CreateMetric('Calls/Sec', 'raw', MClass.GAUGE)
+  METRIC = 'ActiveOperations'
+  ret = client.CreateMetricGauge(name=METRIC,
+                                 units='Operations',
+                                 description='The current number of active Operations currently executing',
+                                 creator='Email_Address@example.com')
   print 'Made metric:', ret
 
   # Rewind 1 hour of data
-  now = time.time()
-  ts = now - 3600 * 24
-  data = {}
-  while ts < now:
-    data[ts] = random.random()
-    ts += 55.0 + random.random() * 5.0
-  print 'Publishing %d datapoints' % (len(data))
-  start = time.time()
-  client.StoreBulk(nodetype='test0', attrs=['MyServer130', 'Calls/Sec#raw'], values=data)
-  elapsed = time.time() - start
-  print 'Done!   %.1f sec  or %.1f samp/sec' % (elapsed, len(data) / elapsed)
+  test_start = now = time.time()
+  test_count = 0
+  for server_id in xrange(100):
+    ts = now - 60 * 60 * 24 * 2
+    data = {}
+    while ts < now:
+      data[ts] = random.random()
+      ts += 55.0 + random.random() * 5.0
+    start = time.time()
+    for server_letter in 'ABCDEFGHI':
+      print '[%3d:%s] Publishing %d datapoints' % (server_id, server_letter, len(data))
+      client.StoreBulk(nodetype='test2',
+                       attrs=['MyServer', 'POD:%s' % server_letter, '%03d' % (server_id), METRIC],
+                       values=data,
+                       ttl=300)
+      test_count += len(data)
+      elapsed = time.time() - test_start
+      print 'Done!   %.1f sec  or %.1f samp/sec' % (elapsed, test_count / elapsed)

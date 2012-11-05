@@ -23,13 +23,20 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host[:port]] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  bool CreateNodeType(string nodetype,  attrs)'
-  print '  i32 CreateMetric(string name, string mtype, MClass mclass)'
+  print '  bool CreateAttr(Attr attr)'
+  print '  bool CreateNodeType(string nodetype,  attrs, string creator)'
+  print '  NodeType GetNodeTypeById(i32 nt_id)'
+  print '  NodeType GetNodeTypeByName(string name)'
   print '   GetNodeTypes()'
+  print '   GetNodeTypeNames()'
+  print '  i32 CreateMetricGauge(string name, string units, string description, string creator)'
+  print '  i32 CreateMetricRate(string name, string units, string description, string creator)'
+  print '  i32 CreateMetricEnum(string name, string units, string description,  enum_map, string creator)'
   print '   GetMetrics()'
-  print '  void Store(string nodetype,  attrs, double timestamp, double value)'
-  print '  void StoreRate(string nodetype,  attrs, double timestamp, double duration_sec, double value)'
-  print '  void StoreBulk(string nodetype,  attrs,  values)'
+  print '  void Store(string nodetype,  attrs, double timestamp, double value, i32 ttl)'
+  print '  void StoreNumeric(i32 nodetype_id,  attr_ids, double timestamp, double value, i32 ttl)'
+  print '  void StoreRate(string nodetype,  attrs, double timestamp, double duration_sec, double value, i32 ttl)'
+  print '  void StoreBulk(string nodetype,  attrs,  values, i32 ttl)'
   print ''
   sys.exit(0)
 
@@ -81,23 +88,59 @@ protocol = TBinaryProtocol.TBinaryProtocol(transport)
 client = TSPublish.Client(protocol)
 transport.open()
 
-if cmd == 'CreateNodeType':
-  if len(args) != 2:
-    print 'CreateNodeType requires 2 args'
+if cmd == 'CreateAttr':
+  if len(args) != 1:
+    print 'CreateAttr requires 1 args'
     sys.exit(1)
-  pp.pprint(client.CreateNodeType(args[0],eval(args[1]),))
+  pp.pprint(client.CreateAttr(eval(args[0]),))
 
-elif cmd == 'CreateMetric':
+elif cmd == 'CreateNodeType':
   if len(args) != 3:
-    print 'CreateMetric requires 3 args'
+    print 'CreateNodeType requires 3 args'
     sys.exit(1)
-  pp.pprint(client.CreateMetric(args[0],args[1],eval(args[2]),))
+  pp.pprint(client.CreateNodeType(args[0],eval(args[1]),args[2],))
+
+elif cmd == 'GetNodeTypeById':
+  if len(args) != 1:
+    print 'GetNodeTypeById requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.GetNodeTypeById(eval(args[0]),))
+
+elif cmd == 'GetNodeTypeByName':
+  if len(args) != 1:
+    print 'GetNodeTypeByName requires 1 args'
+    sys.exit(1)
+  pp.pprint(client.GetNodeTypeByName(args[0],))
 
 elif cmd == 'GetNodeTypes':
   if len(args) != 0:
     print 'GetNodeTypes requires 0 args'
     sys.exit(1)
   pp.pprint(client.GetNodeTypes())
+
+elif cmd == 'GetNodeTypeNames':
+  if len(args) != 0:
+    print 'GetNodeTypeNames requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.GetNodeTypeNames())
+
+elif cmd == 'CreateMetricGauge':
+  if len(args) != 4:
+    print 'CreateMetricGauge requires 4 args'
+    sys.exit(1)
+  pp.pprint(client.CreateMetricGauge(args[0],args[1],args[2],args[3],))
+
+elif cmd == 'CreateMetricRate':
+  if len(args) != 4:
+    print 'CreateMetricRate requires 4 args'
+    sys.exit(1)
+  pp.pprint(client.CreateMetricRate(args[0],args[1],args[2],args[3],))
+
+elif cmd == 'CreateMetricEnum':
+  if len(args) != 5:
+    print 'CreateMetricEnum requires 5 args'
+    sys.exit(1)
+  pp.pprint(client.CreateMetricEnum(args[0],args[1],args[2],eval(args[3]),args[4],))
 
 elif cmd == 'GetMetrics':
   if len(args) != 0:
@@ -106,22 +149,28 @@ elif cmd == 'GetMetrics':
   pp.pprint(client.GetMetrics())
 
 elif cmd == 'Store':
-  if len(args) != 4:
-    print 'Store requires 4 args'
+  if len(args) != 5:
+    print 'Store requires 5 args'
     sys.exit(1)
-  pp.pprint(client.Store(args[0],eval(args[1]),eval(args[2]),eval(args[3]),))
+  pp.pprint(client.Store(args[0],eval(args[1]),eval(args[2]),eval(args[3]),eval(args[4]),))
+
+elif cmd == 'StoreNumeric':
+  if len(args) != 5:
+    print 'StoreNumeric requires 5 args'
+    sys.exit(1)
+  pp.pprint(client.StoreNumeric(eval(args[0]),eval(args[1]),eval(args[2]),eval(args[3]),eval(args[4]),))
 
 elif cmd == 'StoreRate':
-  if len(args) != 5:
-    print 'StoreRate requires 5 args'
+  if len(args) != 6:
+    print 'StoreRate requires 6 args'
     sys.exit(1)
-  pp.pprint(client.StoreRate(args[0],eval(args[1]),eval(args[2]),eval(args[3]),eval(args[4]),))
+  pp.pprint(client.StoreRate(args[0],eval(args[1]),eval(args[2]),eval(args[3]),eval(args[4]),eval(args[5]),))
 
 elif cmd == 'StoreBulk':
-  if len(args) != 3:
-    print 'StoreBulk requires 3 args'
+  if len(args) != 4:
+    print 'StoreBulk requires 4 args'
     sys.exit(1)
-  pp.pprint(client.StoreBulk(args[0],eval(args[1]),eval(args[2]),))
+  pp.pprint(client.StoreBulk(args[0],eval(args[1]),eval(args[2]),eval(args[3]),))
 
 else:
   print 'Unrecognized method %s' % cmd

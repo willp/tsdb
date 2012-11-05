@@ -13,40 +13,99 @@ from thrift.protocol.TBase import TBase, TExceptionBase
 
 
 class Iface(object):
-  def CreateNodeType(self, nodetype, attrs):
+  def CreateAttr(self, attr):
+    """
+    Parameters:
+     - attr
+    """
+    pass
+
+  def CreateNodeType(self, nodetype, attrs, creator):
     """
     Parameters:
      - nodetype
      - attrs
+     - creator
     """
     pass
 
-  def CreateMetric(self, name, mtype, mclass):
+  def GetNodeTypeById(self, nt_id):
+    """
+    Parameters:
+     - nt_id
+    """
+    pass
+
+  def GetNodeTypeByName(self, name):
     """
     Parameters:
      - name
-     - mtype
-     - mclass
     """
     pass
 
   def GetNodeTypes(self, ):
     pass
 
+  def GetNodeTypeNames(self, ):
+    pass
+
+  def CreateMetricGauge(self, name, units, description, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - creator
+    """
+    pass
+
+  def CreateMetricRate(self, name, units, description, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - creator
+    """
+    pass
+
+  def CreateMetricEnum(self, name, units, description, enum_map, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - enum_map
+     - creator
+    """
+    pass
+
   def GetMetrics(self, ):
     pass
 
-  def Store(self, nodetype, attrs, timestamp, value):
+  def Store(self, nodetype, attrs, timestamp, value, ttl):
     """
     Parameters:
      - nodetype
      - attrs
      - timestamp
      - value
+     - ttl
     """
     pass
 
-  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+  def StoreNumeric(self, nodetype_id, attr_ids, timestamp, value, ttl):
+    """
+    Parameters:
+     - nodetype_id
+     - attr_ids
+     - timestamp
+     - value
+     - ttl
+    """
+    pass
+
+  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value, ttl):
     """
     Parameters:
      - nodetype
@@ -54,15 +113,17 @@ class Iface(object):
      - timestamp
      - duration_sec
      - value
+     - ttl
     """
     pass
 
-  def StoreBulk(self, nodetype, attrs, values):
+  def StoreBulk(self, nodetype, attrs, values, ttl):
     """
     Parameters:
      - nodetype
      - attrs
      - values
+     - ttl
     """
     pass
 
@@ -74,20 +135,54 @@ class Client(Iface):
       self._oprot = oprot
     self._seqid = 0
 
-  def CreateNodeType(self, nodetype, attrs):
+  def CreateAttr(self, attr):
+    """
+    Parameters:
+     - attr
+    """
+    self.send_CreateAttr(attr)
+    return self.recv_CreateAttr()
+
+  def send_CreateAttr(self, attr):
+    self._oprot.writeMessageBegin('CreateAttr', TMessageType.CALL, self._seqid)
+    args = CreateAttr_args()
+    args.attr = attr
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CreateAttr(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CreateAttr_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateAttr failed: unknown result");
+
+  def CreateNodeType(self, nodetype, attrs, creator):
     """
     Parameters:
      - nodetype
      - attrs
+     - creator
     """
-    self.send_CreateNodeType(nodetype, attrs)
+    self.send_CreateNodeType(nodetype, attrs, creator)
     return self.recv_CreateNodeType()
 
-  def send_CreateNodeType(self, nodetype, attrs):
+  def send_CreateNodeType(self, nodetype, attrs, creator):
     self._oprot.writeMessageBegin('CreateNodeType', TMessageType.CALL, self._seqid)
     args = CreateNodeType_args()
     args.nodetype = nodetype
     args.attrs = attrs
+    args.creator = creator
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -104,41 +199,75 @@ class Client(Iface):
     self._iprot.readMessageEnd()
     if result.success is not None:
       return result.success
+    if result.exc1 is not None:
+      raise result.exc1
+    if result.exc2 is not None:
+      raise result.exc2
     raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateNodeType failed: unknown result");
 
-  def CreateMetric(self, name, mtype, mclass):
+  def GetNodeTypeById(self, nt_id):
     """
     Parameters:
-     - name
-     - mtype
-     - mclass
+     - nt_id
     """
-    self.send_CreateMetric(name, mtype, mclass)
-    return self.recv_CreateMetric()
+    self.send_GetNodeTypeById(nt_id)
+    return self.recv_GetNodeTypeById()
 
-  def send_CreateMetric(self, name, mtype, mclass):
-    self._oprot.writeMessageBegin('CreateMetric', TMessageType.CALL, self._seqid)
-    args = CreateMetric_args()
-    args.name = name
-    args.mtype = mtype
-    args.mclass = mclass
+  def send_GetNodeTypeById(self, nt_id):
+    self._oprot.writeMessageBegin('GetNodeTypeById', TMessageType.CALL, self._seqid)
+    args = GetNodeTypeById_args()
+    args.nt_id = nt_id
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_CreateMetric(self, ):
+  def recv_GetNodeTypeById(self, ):
     (fname, mtype, rseqid) = self._iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(self._iprot)
       self._iprot.readMessageEnd()
       raise x
-    result = CreateMetric_result()
+    result = GetNodeTypeById_result()
     result.read(self._iprot)
     self._iprot.readMessageEnd()
     if result.success is not None:
       return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateMetric failed: unknown result");
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "GetNodeTypeById failed: unknown result");
+
+  def GetNodeTypeByName(self, name):
+    """
+    Parameters:
+     - name
+    """
+    self.send_GetNodeTypeByName(name)
+    return self.recv_GetNodeTypeByName()
+
+  def send_GetNodeTypeByName(self, name):
+    self._oprot.writeMessageBegin('GetNodeTypeByName', TMessageType.CALL, self._seqid)
+    args = GetNodeTypeByName_args()
+    args.name = name
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_GetNodeTypeByName(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = GetNodeTypeByName_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "GetNodeTypeByName failed: unknown result");
 
   def GetNodeTypes(self, ):
     self.send_GetNodeTypes()
@@ -165,6 +294,147 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "GetNodeTypes failed: unknown result");
 
+  def GetNodeTypeNames(self, ):
+    self.send_GetNodeTypeNames()
+    return self.recv_GetNodeTypeNames()
+
+  def send_GetNodeTypeNames(self, ):
+    self._oprot.writeMessageBegin('GetNodeTypeNames', TMessageType.CALL, self._seqid)
+    args = GetNodeTypeNames_args()
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_GetNodeTypeNames(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = GetNodeTypeNames_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "GetNodeTypeNames failed: unknown result");
+
+  def CreateMetricGauge(self, name, units, description, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - creator
+    """
+    self.send_CreateMetricGauge(name, units, description, creator)
+    return self.recv_CreateMetricGauge()
+
+  def send_CreateMetricGauge(self, name, units, description, creator):
+    self._oprot.writeMessageBegin('CreateMetricGauge', TMessageType.CALL, self._seqid)
+    args = CreateMetricGauge_args()
+    args.name = name
+    args.units = units
+    args.description = description
+    args.creator = creator
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CreateMetricGauge(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CreateMetricGauge_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateMetricGauge failed: unknown result");
+
+  def CreateMetricRate(self, name, units, description, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - creator
+    """
+    self.send_CreateMetricRate(name, units, description, creator)
+    return self.recv_CreateMetricRate()
+
+  def send_CreateMetricRate(self, name, units, description, creator):
+    self._oprot.writeMessageBegin('CreateMetricRate', TMessageType.CALL, self._seqid)
+    args = CreateMetricRate_args()
+    args.name = name
+    args.units = units
+    args.description = description
+    args.creator = creator
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CreateMetricRate(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CreateMetricRate_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateMetricRate failed: unknown result");
+
+  def CreateMetricEnum(self, name, units, description, enum_map, creator):
+    """
+    Parameters:
+     - name
+     - units
+     - description
+     - enum_map
+     - creator
+    """
+    self.send_CreateMetricEnum(name, units, description, enum_map, creator)
+    return self.recv_CreateMetricEnum()
+
+  def send_CreateMetricEnum(self, name, units, description, enum_map, creator):
+    self._oprot.writeMessageBegin('CreateMetricEnum', TMessageType.CALL, self._seqid)
+    args = CreateMetricEnum_args()
+    args.name = name
+    args.units = units
+    args.description = description
+    args.enum_map = enum_map
+    args.creator = creator
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_CreateMetricEnum(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = CreateMetricEnum_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.exc is not None:
+      raise result.exc
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "CreateMetricEnum failed: unknown result");
+
   def GetMetrics(self, ):
     self.send_GetMetrics()
     return self.recv_GetMetrics()
@@ -190,24 +460,26 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "GetMetrics failed: unknown result");
 
-  def Store(self, nodetype, attrs, timestamp, value):
+  def Store(self, nodetype, attrs, timestamp, value, ttl):
     """
     Parameters:
      - nodetype
      - attrs
      - timestamp
      - value
+     - ttl
     """
-    self.send_Store(nodetype, attrs, timestamp, value)
+    self.send_Store(nodetype, attrs, timestamp, value, ttl)
     self.recv_Store()
 
-  def send_Store(self, nodetype, attrs, timestamp, value):
+  def send_Store(self, nodetype, attrs, timestamp, value, ttl):
     self._oprot.writeMessageBegin('Store', TMessageType.CALL, self._seqid)
     args = Store_args()
     args.nodetype = nodetype
     args.attrs = attrs
     args.timestamp = timestamp
     args.value = value
+    args.ttl = ttl
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -226,7 +498,45 @@ class Client(Iface):
       raise result.exc
     return
 
-  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+  def StoreNumeric(self, nodetype_id, attr_ids, timestamp, value, ttl):
+    """
+    Parameters:
+     - nodetype_id
+     - attr_ids
+     - timestamp
+     - value
+     - ttl
+    """
+    self.send_StoreNumeric(nodetype_id, attr_ids, timestamp, value, ttl)
+    self.recv_StoreNumeric()
+
+  def send_StoreNumeric(self, nodetype_id, attr_ids, timestamp, value, ttl):
+    self._oprot.writeMessageBegin('StoreNumeric', TMessageType.CALL, self._seqid)
+    args = StoreNumeric_args()
+    args.nodetype_id = nodetype_id
+    args.attr_ids = attr_ids
+    args.timestamp = timestamp
+    args.value = value
+    args.ttl = ttl
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_StoreNumeric(self, ):
+    (fname, mtype, rseqid) = self._iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(self._iprot)
+      self._iprot.readMessageEnd()
+      raise x
+    result = StoreNumeric_result()
+    result.read(self._iprot)
+    self._iprot.readMessageEnd()
+    if result.exc is not None:
+      raise result.exc
+    return
+
+  def StoreRate(self, nodetype, attrs, timestamp, duration_sec, value, ttl):
     """
     Parameters:
      - nodetype
@@ -234,11 +544,12 @@ class Client(Iface):
      - timestamp
      - duration_sec
      - value
+     - ttl
     """
-    self.send_StoreRate(nodetype, attrs, timestamp, duration_sec, value)
+    self.send_StoreRate(nodetype, attrs, timestamp, duration_sec, value, ttl)
     self.recv_StoreRate()
 
-  def send_StoreRate(self, nodetype, attrs, timestamp, duration_sec, value):
+  def send_StoreRate(self, nodetype, attrs, timestamp, duration_sec, value, ttl):
     self._oprot.writeMessageBegin('StoreRate', TMessageType.CALL, self._seqid)
     args = StoreRate_args()
     args.nodetype = nodetype
@@ -246,6 +557,7 @@ class Client(Iface):
     args.timestamp = timestamp
     args.duration_sec = duration_sec
     args.value = value
+    args.ttl = ttl
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -264,22 +576,24 @@ class Client(Iface):
       raise result.exc
     return
 
-  def StoreBulk(self, nodetype, attrs, values):
+  def StoreBulk(self, nodetype, attrs, values, ttl):
     """
     Parameters:
      - nodetype
      - attrs
      - values
+     - ttl
     """
-    self.send_StoreBulk(nodetype, attrs, values)
+    self.send_StoreBulk(nodetype, attrs, values, ttl)
     self.recv_StoreBulk()
 
-  def send_StoreBulk(self, nodetype, attrs, values):
+  def send_StoreBulk(self, nodetype, attrs, values, ttl):
     self._oprot.writeMessageBegin('StoreBulk', TMessageType.CALL, self._seqid)
     args = StoreBulk_args()
     args.nodetype = nodetype
     args.attrs = attrs
     args.values = values
+    args.ttl = ttl
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
@@ -303,11 +617,18 @@ class Processor(Iface, TProcessor):
   def __init__(self, handler):
     self._handler = handler
     self._processMap = {}
+    self._processMap["CreateAttr"] = Processor.process_CreateAttr
     self._processMap["CreateNodeType"] = Processor.process_CreateNodeType
-    self._processMap["CreateMetric"] = Processor.process_CreateMetric
+    self._processMap["GetNodeTypeById"] = Processor.process_GetNodeTypeById
+    self._processMap["GetNodeTypeByName"] = Processor.process_GetNodeTypeByName
     self._processMap["GetNodeTypes"] = Processor.process_GetNodeTypes
+    self._processMap["GetNodeTypeNames"] = Processor.process_GetNodeTypeNames
+    self._processMap["CreateMetricGauge"] = Processor.process_CreateMetricGauge
+    self._processMap["CreateMetricRate"] = Processor.process_CreateMetricRate
+    self._processMap["CreateMetricEnum"] = Processor.process_CreateMetricEnum
     self._processMap["GetMetrics"] = Processor.process_GetMetrics
     self._processMap["Store"] = Processor.process_Store
+    self._processMap["StoreNumeric"] = Processor.process_StoreNumeric
     self._processMap["StoreRate"] = Processor.process_StoreRate
     self._processMap["StoreBulk"] = Processor.process_StoreBulk
 
@@ -326,24 +647,60 @@ class Processor(Iface, TProcessor):
       self._processMap[name](self, seqid, iprot, oprot)
     return True
 
+  def process_CreateAttr(self, seqid, iprot, oprot):
+    args = CreateAttr_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CreateAttr_result()
+    try:
+      result.success = self._handler.CreateAttr(args.attr)
+    except AlreadyExists as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("CreateAttr", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_CreateNodeType(self, seqid, iprot, oprot):
     args = CreateNodeType_args()
     args.read(iprot)
     iprot.readMessageEnd()
     result = CreateNodeType_result()
-    result.success = self._handler.CreateNodeType(args.nodetype, args.attrs)
+    try:
+      result.success = self._handler.CreateNodeType(args.nodetype, args.attrs, args.creator)
+    except AlreadyExists as exc1:
+      result.exc1 = exc1
+    except DoesNotExist as exc2:
+      result.exc2 = exc2
     oprot.writeMessageBegin("CreateNodeType", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_CreateMetric(self, seqid, iprot, oprot):
-    args = CreateMetric_args()
+  def process_GetNodeTypeById(self, seqid, iprot, oprot):
+    args = GetNodeTypeById_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = CreateMetric_result()
-    result.success = self._handler.CreateMetric(args.name, args.mtype, args.mclass)
-    oprot.writeMessageBegin("CreateMetric", TMessageType.REPLY, seqid)
+    result = GetNodeTypeById_result()
+    try:
+      result.success = self._handler.GetNodeTypeById(args.nt_id)
+    except DoesNotExist as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("GetNodeTypeById", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_GetNodeTypeByName(self, seqid, iprot, oprot):
+    args = GetNodeTypeByName_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetNodeTypeByName_result()
+    try:
+      result.success = self._handler.GetNodeTypeByName(args.name)
+    except DoesNotExist as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("GetNodeTypeByName", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -355,6 +712,59 @@ class Processor(Iface, TProcessor):
     result = GetNodeTypes_result()
     result.success = self._handler.GetNodeTypes()
     oprot.writeMessageBegin("GetNodeTypes", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_GetNodeTypeNames(self, seqid, iprot, oprot):
+    args = GetNodeTypeNames_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = GetNodeTypeNames_result()
+    result.success = self._handler.GetNodeTypeNames()
+    oprot.writeMessageBegin("GetNodeTypeNames", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_CreateMetricGauge(self, seqid, iprot, oprot):
+    args = CreateMetricGauge_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CreateMetricGauge_result()
+    try:
+      result.success = self._handler.CreateMetricGauge(args.name, args.units, args.description, args.creator)
+    except AlreadyExists as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("CreateMetricGauge", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_CreateMetricRate(self, seqid, iprot, oprot):
+    args = CreateMetricRate_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CreateMetricRate_result()
+    try:
+      result.success = self._handler.CreateMetricRate(args.name, args.units, args.description, args.creator)
+    except AlreadyExists as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("CreateMetricRate", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_CreateMetricEnum(self, seqid, iprot, oprot):
+    args = CreateMetricEnum_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = CreateMetricEnum_result()
+    try:
+      result.success = self._handler.CreateMetricEnum(args.name, args.units, args.description, args.enum_map, args.creator)
+    except AlreadyExists as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("CreateMetricEnum", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -376,10 +786,24 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = Store_result()
     try:
-      self._handler.Store(args.nodetype, args.attrs, args.timestamp, args.value)
+      self._handler.Store(args.nodetype, args.attrs, args.timestamp, args.value, args.ttl)
     except InvalidSample as exc:
       result.exc = exc
     oprot.writeMessageBegin("Store", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_StoreNumeric(self, seqid, iprot, oprot):
+    args = StoreNumeric_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = StoreNumeric_result()
+    try:
+      self._handler.StoreNumeric(args.nodetype_id, args.attr_ids, args.timestamp, args.value, args.ttl)
+    except InvalidSample as exc:
+      result.exc = exc
+    oprot.writeMessageBegin("StoreNumeric", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -390,7 +814,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = StoreRate_result()
     try:
-      self._handler.StoreRate(args.nodetype, args.attrs, args.timestamp, args.duration_sec, args.value)
+      self._handler.StoreRate(args.nodetype, args.attrs, args.timestamp, args.duration_sec, args.value, args.ttl)
     except InvalidSample as exc:
       result.exc = exc
     oprot.writeMessageBegin("StoreRate", TMessageType.REPLY, seqid)
@@ -404,7 +828,7 @@ class Processor(Iface, TProcessor):
     iprot.readMessageEnd()
     result = StoreBulk_result()
     try:
-      self._handler.StoreBulk(args.nodetype, args.attrs, args.values)
+      self._handler.StoreBulk(args.nodetype, args.attrs, args.values, args.ttl)
     except InvalidSample as exc:
       result.exc = exc
     oprot.writeMessageBegin("StoreBulk", TMessageType.REPLY, seqid)
@@ -415,22 +839,77 @@ class Processor(Iface, TProcessor):
 
 # HELPER FUNCTIONS AND STRUCTURES
 
+class CreateAttr_args(TBase):
+  """
+  Attributes:
+   - attr
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'attr', (Attr, Attr.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, attr=None,):
+    self.attr = attr
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateAttr_result(TBase):
+  """
+  Attributes:
+   - success
+   - exc
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'exc', (AlreadyExists, AlreadyExists.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, exc=None,):
+    self.success = success
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class CreateNodeType_args(TBase):
   """
   Attributes:
    - nodetype
    - attrs
+   - creator
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'nodetype', None, None, ), # 1
     (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
+    (3, TType.STRING, 'creator', None, None, ), # 3
   )
 
-  def __init__(self, nodetype=None, attrs=None,):
+  def __init__(self, nodetype=None, attrs=None, creator=None,):
     self.nodetype = nodetype
     self.attrs = attrs
+    self.creator = creator
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -447,14 +926,20 @@ class CreateNodeType_result(TBase):
   """
   Attributes:
    - success
+   - exc1
+   - exc2
   """
 
   thrift_spec = (
     (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'exc1', (AlreadyExists, AlreadyExists.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'exc2', (DoesNotExist, DoesNotExist.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, exc1=None, exc2=None,):
     self.success = success
+    self.exc1 = exc1
+    self.exc2 = exc2
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -467,25 +952,71 @@ class CreateNodeType_result(TBase):
   def __ne__(self, other):
     return not (self == other)
 
-class CreateMetric_args(TBase):
+class GetNodeTypeById_args(TBase):
+  """
+  Attributes:
+   - nt_id
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'nt_id', None, None, ), # 1
+  )
+
+  def __init__(self, nt_id=None,):
+    self.nt_id = nt_id
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetNodeTypeById_result(TBase):
+  """
+  Attributes:
+   - success
+   - exc
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (NodeType, NodeType.thrift_spec), None, ), # 0
+    (1, TType.STRUCT, 'exc', (DoesNotExist, DoesNotExist.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, exc=None,):
+    self.success = success
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetNodeTypeByName_args(TBase):
   """
   Attributes:
    - name
-   - mtype
-   - mclass
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'name', None, None, ), # 1
-    (2, TType.STRING, 'mtype', None, None, ), # 2
-    (3, TType.I32, 'mclass', None, None, ), # 3
   )
 
-  def __init__(self, name=None, mtype=None, mclass=None,):
+  def __init__(self, name=None,):
     self.name = name
-    self.mtype = mtype
-    self.mclass = mclass
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -498,18 +1029,21 @@ class CreateMetric_args(TBase):
   def __ne__(self, other):
     return not (self == other)
 
-class CreateMetric_result(TBase):
+class GetNodeTypeByName_result(TBase):
   """
   Attributes:
    - success
+   - exc
   """
 
   thrift_spec = (
-    (0, TType.I32, 'success', None, None, ), # 0
+    (0, TType.STRUCT, 'success', (NodeType, NodeType.thrift_spec), None, ), # 0
+    (1, TType.STRUCT, 'exc', (DoesNotExist, DoesNotExist.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, exc=None,):
     self.success = success
+    self.exc = exc
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -550,6 +1084,232 @@ class GetNodeTypes_result(TBase):
 
   def __init__(self, success=None,):
     self.success = success
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetNodeTypeNames_args(TBase):
+
+  thrift_spec = (
+  )
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class GetNodeTypeNames_result(TBase):
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRING,None), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricGauge_args(TBase):
+  """
+  Attributes:
+   - name
+   - units
+   - description
+   - creator
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRING, 'units', None, None, ), # 2
+    (3, TType.STRING, 'description', None, None, ), # 3
+    (4, TType.STRING, 'creator', None, None, ), # 4
+  )
+
+  def __init__(self, name=None, units=None, description=None, creator=None,):
+    self.name = name
+    self.units = units
+    self.description = description
+    self.creator = creator
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricGauge_result(TBase):
+  """
+  Attributes:
+   - success
+   - exc
+  """
+
+  thrift_spec = (
+    (0, TType.I32, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'exc', (AlreadyExists, AlreadyExists.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, exc=None,):
+    self.success = success
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricRate_args(TBase):
+  """
+  Attributes:
+   - name
+   - units
+   - description
+   - creator
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRING, 'units', None, None, ), # 2
+    (3, TType.STRING, 'description', None, None, ), # 3
+    (4, TType.STRING, 'creator', None, None, ), # 4
+  )
+
+  def __init__(self, name=None, units=None, description=None, creator=None,):
+    self.name = name
+    self.units = units
+    self.description = description
+    self.creator = creator
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricRate_result(TBase):
+  """
+  Attributes:
+   - success
+   - exc
+  """
+
+  thrift_spec = (
+    (0, TType.I32, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'exc', (AlreadyExists, AlreadyExists.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, exc=None,):
+    self.success = success
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricEnum_args(TBase):
+  """
+  Attributes:
+   - name
+   - units
+   - description
+   - enum_map
+   - creator
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRING, 'units', None, None, ), # 2
+    (3, TType.STRING, 'description', None, None, ), # 3
+    (4, TType.MAP, 'enum_map', (TType.I32,None,TType.STRING,None), None, ), # 4
+    (5, TType.STRING, 'creator', None, None, ), # 5
+  )
+
+  def __init__(self, name=None, units=None, description=None, enum_map=None, creator=None,):
+    self.name = name
+    self.units = units
+    self.description = description
+    self.enum_map = enum_map
+    self.creator = creator
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class CreateMetricEnum_result(TBase):
+  """
+  Attributes:
+   - success
+   - exc
+  """
+
+  thrift_spec = (
+    (0, TType.I32, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'exc', (AlreadyExists, AlreadyExists.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, exc=None,):
+    self.success = success
+    self.exc = exc
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -609,6 +1369,7 @@ class Store_args(TBase):
    - attrs
    - timestamp
    - value
+   - ttl
   """
 
   thrift_spec = (
@@ -617,13 +1378,15 @@ class Store_args(TBase):
     (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
     (3, TType.DOUBLE, 'timestamp', None, None, ), # 3
     (4, TType.DOUBLE, 'value', None, None, ), # 4
+    (5, TType.I32, 'ttl', None, None, ), # 5
   )
 
-  def __init__(self, nodetype=None, attrs=None, timestamp=None, value=None,):
+  def __init__(self, nodetype=None, attrs=None, timestamp=None, value=None, ttl=None,):
     self.nodetype = nodetype
     self.attrs = attrs
     self.timestamp = timestamp
     self.value = value
+    self.ttl = ttl
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -661,6 +1424,68 @@ class Store_result(TBase):
   def __ne__(self, other):
     return not (self == other)
 
+class StoreNumeric_args(TBase):
+  """
+  Attributes:
+   - nodetype_id
+   - attr_ids
+   - timestamp
+   - value
+   - ttl
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'nodetype_id', None, None, ), # 1
+    (2, TType.LIST, 'attr_ids', (TType.I32,None), None, ), # 2
+    (3, TType.DOUBLE, 'timestamp', None, None, ), # 3
+    (4, TType.DOUBLE, 'value', None, None, ), # 4
+    (5, TType.I32, 'ttl', None, None, ), # 5
+  )
+
+  def __init__(self, nodetype_id=None, attr_ids=None, timestamp=None, value=None, ttl=None,):
+    self.nodetype_id = nodetype_id
+    self.attr_ids = attr_ids
+    self.timestamp = timestamp
+    self.value = value
+    self.ttl = ttl
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class StoreNumeric_result(TBase):
+  """
+  Attributes:
+   - exc
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'exc', (InvalidSample, InvalidSample.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, exc=None,):
+    self.exc = exc
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class StoreRate_args(TBase):
   """
   Attributes:
@@ -669,6 +1494,7 @@ class StoreRate_args(TBase):
    - timestamp
    - duration_sec
    - value
+   - ttl
   """
 
   thrift_spec = (
@@ -678,14 +1504,16 @@ class StoreRate_args(TBase):
     (3, TType.DOUBLE, 'timestamp', None, None, ), # 3
     (4, TType.DOUBLE, 'duration_sec', None, None, ), # 4
     (5, TType.DOUBLE, 'value', None, None, ), # 5
+    (6, TType.I32, 'ttl', None, None, ), # 6
   )
 
-  def __init__(self, nodetype=None, attrs=None, timestamp=None, duration_sec=None, value=None,):
+  def __init__(self, nodetype=None, attrs=None, timestamp=None, duration_sec=None, value=None, ttl=None,):
     self.nodetype = nodetype
     self.attrs = attrs
     self.timestamp = timestamp
     self.duration_sec = duration_sec
     self.value = value
+    self.ttl = ttl
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)
@@ -729,6 +1557,7 @@ class StoreBulk_args(TBase):
    - nodetype
    - attrs
    - values
+   - ttl
   """
 
   thrift_spec = (
@@ -736,12 +1565,14 @@ class StoreBulk_args(TBase):
     (1, TType.STRING, 'nodetype', None, None, ), # 1
     (2, TType.LIST, 'attrs', (TType.STRING,None), None, ), # 2
     (3, TType.MAP, 'values', (TType.DOUBLE,None,TType.DOUBLE,None), None, ), # 3
+    (4, TType.I32, 'ttl', None, None, ), # 4
   )
 
-  def __init__(self, nodetype=None, attrs=None, values=None,):
+  def __init__(self, nodetype=None, attrs=None, values=None, ttl=None,):
     self.nodetype = nodetype
     self.attrs = attrs
     self.values = values
+    self.ttl = ttl
 
   def __repr__(self):
     L = ['%s=%r' % (key, value)

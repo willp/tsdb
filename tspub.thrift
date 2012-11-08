@@ -1,6 +1,7 @@
 #
 # tsdb data API
 #
+#
 
 exception InvalidSample {
   1: string what

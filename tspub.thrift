@@ -23,10 +23,10 @@ enum CannedValids {
   IP = 1
   IPV4 = 2
   IPV6 = 3
-  MAC_ADDRESS = 4  /* accept any known mac address formatting */
-  MAC_ADDRESS_STRICT = 5 /* only hyphen-delimited uppercase MAC addresses, 00-01-C7-01-02-03 */
+  MAC_ADDRESS = 4         /* accept any known mac address formatting */
+  MAC_ADDRESS_STRICT = 5  /* only hyphen-delimited uppercase MAC addresses, 00-01-C7-01-02-03 */
   FQDN = 6
-  FQDNR = 7  /* resolvable FQDN */
+  FQDNR = 7             /* resolvable FQDN */
   FQDN_COLON_PORT = 8
   FQDNR_COLON_PORT = 9  /* resolvable FQDN, valid port range */
   IP_COLON_PORT = 10
@@ -154,6 +154,8 @@ struct Metric {
 
 service TSPublish {
 
+  list<string> GetAttrNames();
+  list<Attr> GetAttrs();
   bool CreateAttr(1: Attr attr
                  ) throws (1: AlreadyExists exc);
   

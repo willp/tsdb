@@ -31,16 +31,15 @@ KEYSPACE = 'tsdata4'
 CF_META = 'metadata4'
 CF_NT = 'nodetypes4'
 
+# TODO: wrap up nicer
 ATTR_MAP = collections.defaultdict(dict)
 RECENT_NT_ATTRS = collections.defaultdict(dict)
 NAV_MAP = dict()
 
-
-
+# TODO: wrap up nicer
 NT_ATTRS = {}  # {"nodetypestr": ("attr0", "attr1", "attr2", ...)}
 NT_IDS = {}  # {"nodetypestr": <int:nodetype_id>, ...}
 NT_IDS_REV = {} # { <int:nodetype_id>: "nodetypestr", ...}
-
 
 class PubHandler(object):
   CF_OPTS = dict(
@@ -94,7 +93,6 @@ class PubHandler(object):
                                 **self.CF_META_OPTS)    
     return csys
 
-
   def _load_nodetypes(self):
     nt_cf = pycassa.ColumnFamily(self.pool, CF_NT)
     try:
@@ -111,7 +109,7 @@ class PubHandler(object):
       if attrdict.keys() == range(len(attrdict)):
         NT_ATTRS[nodetype] = attrdict.values()
       else:
-        pass  # TODO: ignore partial nodetype, log warning, schedulre refresh for later
+        pass  # TODO: ignore partial nodetype, log warning, schedule refresh for later
     print 'NT ATTRS:', NT_ATTRS
 
   def incr_attr(self, cf, attrname, attrval, overfetch=0):
@@ -172,11 +170,10 @@ class PubHandler(object):
     return attr_id, created
 
   def _process_recent(self, nodetype):
-    pool = self.pool
     print 'Flushing nav for NAV_%s' % (nodetype)
     now = int(time.time())
     ntc = NAV_MAP[nodetype]
-    nav_cf = pycassa.ColumnFamily(pool, 'nav_' + nodetype)
+    nav_cf = pycassa.ColumnFamily(self.pool, 'nav_' + nodetype)
     count = 0
     start = time.time()
     print 'INSERTING nav rows...'
@@ -200,8 +197,7 @@ class PubHandler(object):
     mcf = self.meta_cf
     print 'Building nodetype %s with attrs: %r' % (nodetype, attrs)
     assert len(attrs) == len(set(attrs))  # no dupes
-    # First, need to define the nodetype as a list of attrs
-    # as:
+    # First, need to define the nodetype as a list of attrs as:
     # 1. get or create new nodetype_id using CF_META on "nodetype" attr
     #  now we have a nodetype ID value
     # 2. add <nodetype>(str) rowkey in CF_NT
@@ -222,7 +218,7 @@ class PubHandler(object):
     else:
       print 'already SET! (%d)' % nt_id
       # TODO: validate nodetype really exists
-      #return nt_id
+      return nt_id
     nt_cf = pycassa.ColumnFamily(pool, CF_NT)
     print 'Adding attributes %r to "%s" col-family' % (attrs, CF_NT)
     attr_dict = dict(enumerate(attrs))  # {0:attr0, 1:attr1, 2:attr2, ...}
@@ -257,8 +253,7 @@ class PubHandler(object):
                                 comparator_type='FloatType',     # timestamps as floats!
                                 default_validation_class='FloatType',
                                 key_validation_class='AsciiType',
-                                **self.CF_OPTS
-                                )
+                                **self.CF_OPTS)
     else:
       print 'already SET!'
     if CF_NAV not in cfs:
@@ -267,8 +262,7 @@ class PubHandler(object):
                                 comparator_type='IntegerType',
                                 default_validation_class='IntegerType',
                                 key_validation_class='AsciiType',
-                                **self.CF_META_OPTS
-                                )
+                                **self.CF_META_OPTS)
     else:
       print 'already SET!'
     print 'DONE!'

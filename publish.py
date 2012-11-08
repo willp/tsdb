@@ -324,7 +324,7 @@ class PubHandler(object):
     assert len(nodetype) > 2
     assert ' ' not in nodetype
     print 'Creating nodetype "%s" with attrs: %r' % (nodetype, attrs)
-    self.create_nodetype(nodetype, attrs)
+    self._create_nodetype(nodetype, attrs)
     print 'Created nodetype "%s"!' % nodetype
     return True
 

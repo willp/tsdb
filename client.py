@@ -28,7 +28,7 @@ if __name__ == '__main__':
                        ):
     if nt not in lst:
       print 'Building "%s" nodetype' % nt
-      ret = client.CreateNodeType(nt, nt_attrs)
+      ret = client.CreateNodeType(nt, nt_attrs, 'creator@example.com')
       print 'Ret returned:', ret
       time.sleep(5)
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
   test_start = now = time.time()
   test_count = 0
   for server_id in xrange(100):
-    ts = now - 60 * 60 * 24 * 2
+    ts = now - 60 * 60 * 24 * 14
     data = {}
     while ts < now:
       data[ts] = random.random()
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     for server_letter in 'ABCDEFGHI':
       print '[%3d:%s] Publishing %d datapoints' % (server_id, server_letter, len(data))
       client.StoreBulk(nodetype='test2',
-                       attrs=['MyServer', 'POD:%s' % server_letter, '%03d' % (server_id), METRIC],
+                       attrs=['MyServer', 'POD:0:%s' % server_letter, '%03d' % (server_id), METRIC],
                        values=data,
                        ttl=300)
       test_count += len(data)
